@@ -5,6 +5,8 @@ import study.datajpa.entity.Member;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class MemberJpaRepository {
@@ -17,7 +19,58 @@ public class MemberJpaRepository {
         return member;
     }
 
+    public void delete(Member member){
+        em.remove(member);
+    }
+
+    public List<Member> findAll(){
+        //전체 조회 시에는 JPQL 사용
+        return em.createQuery("select m from Member m", Member.class)
+                .getResultList();
+    }
+
+    public Optional<Member> findById(Long id){
+        Member member = em.find(Member.class, id);
+        //member가 null이면 그대로 null?
+        return Optional.ofNullable(member);
+    }
+
+    public long count(){
+        return em.createQuery("select count(m) from Member m", Long.class)
+                .getSingleResult();
+    }
+
     public Member find(Long id){
         return em.find(Member.class, id);
+    }
+
+    public List<Member> findByUsernameAndAgeGreaterThan(String username, int age){
+        return em.createQuery("select m from Member m where m.username = :username and m.age > :age")
+                .setParameter("username", username)
+                .setParameter("age", age)
+                .getResultList();
+    }
+
+    public List<Member> findByPage(int age, int offset, int limit){
+        return em.createQuery("select m from Member m where m.age = :age order by m.username desc")
+                .setParameter("age", age)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
+    //몇번째 페이지인지 보기 위함
+    public long totalCount(int age){
+        return em.createQuery("select count(m) from Member m where m.age = :age", Long.class)
+                .setParameter("age", age)
+                .getSingleResult();
+    }
+
+    //벌크성 수정
+    public int bulkAgePlus(int age){
+        return em.createQuery("update Member m set m.age = m.age + 1" +
+                        " where m.age >= :age")
+                .setParameter("age", age)
+                .executeUpdate();
     }
 }

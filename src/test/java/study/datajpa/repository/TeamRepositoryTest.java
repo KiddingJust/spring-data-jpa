@@ -18,6 +18,7 @@ import javax.transaction.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -185,4 +186,70 @@ class TeamRepositoryTest {
         Member member3 = result.get(0);
         System.out.println("member3 = " + member3);
     }
+
+    @Test
+    public void findMemberLazy(){
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 20, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when - 영속성 컨텍스트 완전히 비운 상태에서 조회해보기
+        List<Member> members = memberRepository.findAll();
+//        List<Member> members = memberRepository.findMemberFetchJoin();
+
+        //N+1 문제. Member 1 & Team N
+        for(Member member : members){
+            System.out.println("member = " + member.getUsername());
+            //조회하면 HibernateProxy로 Team 클래스가 조회됨. 가짜 객체를 만들어둠
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            //이때 DB에 쿼리를 날라서 Team 객체에 값을 채움
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
+    @Test
+    public void queryHint(){
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush(); //1차 캐시에 있는 결과를 DB에 날리는 것
+        em.clear(); //1차 캐시를 clear
+
+        //when
+        Member findMember = memberRepository.findById(member1.getId()).get();
+        findMember.setUsername("member2");
+
+        em.flush(); //이때 더티체킹 동작하여 db에 update 쿼리 나감
+        //그런데 더티체킹은 단점이 있음. 바로 원본이 있어야 한다는 것.
+        //즉, 객체를 2개를 가지고 있는 것. 비효율적. 메모리는 더 낭비함. 데이터 변경도 체크하고
+        //--> 변경 예정 없고, 단순 조회용이라고 명시해주면? 최적화 가능. readOnly!
+        Member findMember1 = memberRepository.findReadOnlyByUsername("member1");
+        findMember.setUsername("member2");
+
+        em.flush(); //그래서 더티체킹을 하지 않고, 데이터 변경도 되지 않음.
+    }
+
+    @Test
+    public void lock(){
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush(); //1차 캐시에 있는 결과를 DB에 날리는 것
+        em.clear(); //1차 캐시를 clear
+
+        //when
+        List<Member> result = memberRepository.findLockByUsername("member1");
+    }
+
+    @Test
+    public void callCustom(){
+        List<Member> result = memberRepository.findMemberCustom();
+    }
+
 }

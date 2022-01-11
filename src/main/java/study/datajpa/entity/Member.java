@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Entity
 @Getter @Setter
 @ToString(of = {"id", "username", "age"}) //team은 하면 안됨. 무한루프 돌아감
-public class Member {
+public class Member extends JpaBaseEntity{
 
     //PK를 JPA가 알아서 찾아서 넣어줌
     @Id @GeneratedValue

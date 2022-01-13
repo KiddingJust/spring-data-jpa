@@ -4,18 +4,43 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import study.datajpa.entity.Item;
+import study.datajpa.entity.Member;
+import study.datajpa.entity.Team;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@Transactional
 class ItemRepositoryTest {
 
     @Autowired ItemRepository itemRepository;
+    @Autowired EntityManager em;
+    @Autowired MemberRepository memberRepository;
+
 
     @Test
-    public void save() {
-        Item item = new Item();
-        //아직 아무 작업도 안했으므로 id == null
-        itemRepository.save(item);
+    public void projections(){
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush(); em.clear();
+
+        //when
+        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+
+        for(UsernameOnly usernameOnly : result){
+            System.out.println("usernameOnly = " + usernameOnly.getUsername());
+        }
     }
 }

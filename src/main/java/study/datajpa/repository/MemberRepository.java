@@ -54,4 +54,6 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     //DB에서 조회할 때 다른 쓰레드가 접근해서 변경하지 못하도록
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String username);
+
+    List<UsernameOnly> findProjectionsByUsername(@Param("username") String username);
 }

@@ -37,10 +37,13 @@ class ItemRepositoryTest {
         em.flush(); em.clear();
 
         //when
-        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+        List<NestedClosedProjections> result = memberRepository.findProjectionsByUsername("m1", NestedClosedProjections.class);
 
-        for(UsernameOnly usernameOnly : result){
-            System.out.println("usernameOnly = " + usernameOnly.getUsername());
+        for(NestedClosedProjections nestedClosedProjections : result){
+            String username = nestedClosedProjections.getUsername();
+            System.out.println("usernameOnly = " + username);
+            String teamName = nestedClosedProjections.getTeam().getName();
+            System.out.println("teamName = " + teamName);
         }
     }
 }
